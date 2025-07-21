@@ -2,19 +2,16 @@
 
 ## Visión General
 
-Este proyecto es una aplicación de ejemplo construida con **ASP.NET Core (.NET 9)**, que demuestra la implementación de una arquitectura limpia basada en **Domain-Driven Design (DDD)**, **CQRS (Command Query Responsibility Segregation)** y **Event Sourcing**. El objetivo principal es permitir a los usuarios generar imágenes a partir de descripciones textuales y clasificar imágenes existentes desde una URL, todo ello gestionado a través de un enfoque de dominio impulsado por eventos.
+Este proyecto es una aplicación de ejemplo construida con **ASP.NET Core (.NET 9)**, que demuestra la implementación de una arquitectura limpia basada en **Domain-Driven Design (DDD)**, **CQRS (Command Query Responsibility Segregation)** y **Event Sourcing**. Permite a los usuarios generar imágenes a partir de descripciones y clasificar imágenes existentes utilizando servicios de IA externos.
 
 ## Características Clave
 
-* **Generación de Imágenes:** Permite crear imágenes a partir de una descripción de texto utilizando servicios de Inteligencia Artificial (OpenAI o Azure OpenAI).
-* **Clasificación de Imágenes:** Clasifica imágenes existentes proporcionadas por una URL, identificando su contenido (ej., "Food", "Person") utilizando servicios de IA (Azure AI Vision).
-* **Event Sourcing:** Todos los cambios de estado significativos en el sistema se registran como **eventos inmutables** y se persisten en **EventStoreDB**, sirviendo como la única fuente de verdad.
-* **CQRS (Command Query Responsibility Segregation):**
-    * **Lado de Comandos (Escritura):** Las operaciones que modifican el estado (generar y clasificar imágenes) se manejan a través de comandos explícitos y sus handlers, que solo publican eventos.
-    * **Lado de Consultas (Lectura):** Las operaciones de recuperación de datos se manejan a través de consultas y sus handlers, que leen de **modelos de lectura optimizados** (SQL Server y Redis Cache).
-* **Proyecciones Asíncronas:** Los modelos de lectura se construyen y mantienen actualizados de forma asíncrona mediante **proyectores** que escuchan y procesan los eventos desde EventStoreDB. Esto desacopla la escritura de la lectura y permite la reconstrucción de las vistas.
-* **Arquitectura de Capas Limpia:** El código está organizado en capas bien definidas para asegurar una clara separación de preocupaciones, alta cohesión y bajo acoplamiento.
-* **Manejo Seguro de Secretos:** Las claves API y cadenas de conexión sensibles se gestionan fuera del control de versiones (Git), utilizando archivos `appsettings.Development.json` localmente y variables de entorno para despliegues.
+* **Generación de Imágenes:** Crea imágenes basadas en descripciones de texto (utilizando OpenAI o Azure OpenAI).
+* **Clasificación de Imágenes:** Clasifica imágenes existentes desde una URL (utilizando Azure AI Vision).
+* **Event Sourcing:** Todos los cambios de estado se registran como eventos inmutables en EventStoreDB.
+* **CQRS:** Separación clara entre los flujos de comandos (escritura) y las consultas (lectura).
+* **Proyecciones Asíncronas:** Los modelos de lectura (SQL Server, Redis Cache) se construyen de forma asíncrona a partir de los eventos del Event Store.
+* **Arquitectura de Capas Limpia:** Organización modular con capas de Dominio, Aplicación, Infraestructura y API.
 
 ## Arquitectura Detallada
 
@@ -46,7 +43,7 @@ graph TD
             QH3[GetClassifiedImageByIdQueryHandler]
         end
         subgraph Events & Projections
-            DE[IDomainEvent & Concrete Events (e.g., ImageCreatedEvent)]
+            DE[IDomainEvent & Concrete Events (e.g.,<br/>ImageCreatedEvent)]
             P1[ImageRecordProjector]
             P2[ClassifiedImageRecordProjector]
         end
@@ -131,7 +128,7 @@ graph TD
     QH1 --> AI5: Reads from ICacheService
     QH1 --> AI4: Reads from IDapperRepository
     QH2 --> AI5: Reads from ICacheService
-    QH2 --> AI4: Reads from IDapperRepository
+s    QH2 --> AI4: Reads from IDapperRepository
     QH3 --> AI5: Reads from ICacheService
     QH3 --> AI4: Reads from IDapperRepository
 
