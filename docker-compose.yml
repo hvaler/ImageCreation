@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  sqlserver: # Este es tu EventStoreDB, aunque lo llames sqlserver en el compose
+    image: mcr.microsoft.com/mssql/server:2022-latest # O la imagen de EventStoreDB que estés usando
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Your_strong!Passw0rd
+      # -- ¡AÑADE ESTO! --
+      - EVENTSTORE_MAX_APPEND_SIZE=2097152 # 2 MB (2 * 1024 * 1024 bytes). Ajusta según necesidad.
+                                        # Puedes poner 5242880 para 5MB, etc.
+                                        # Es crucial que sea para la imagen de EventStoreDB.
+    ports:
+      - '1433:1433'
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-Q", "SELECT 1"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+
+  eventstore: # Este es el servicio de EventStoreDB que usas en docker compose
+    image: eventstore/eventstore:latest
+    environment:
+      - EVENTSTORE_INSECURE=true
+      - EVENTSTORE_RUN_PROJECTIONS=All
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+      - EVENTSTORE_MAX_APPEND_SIZE=5242880 
+                                        
+    ports:
+      - '2113:2113'
+      - '1113:1113'

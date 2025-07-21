@@ -1,0 +1,52 @@
+# Binaries and object files
+[Bb]in/
+[Oo]bj/
+# Visual Studio temporary files
+.vs/
+*.suo
+*.user
+*.aps
+*.bsc
+*.map
+*.ncb
+*.opensdf
+*.sdf
+*.bak
+*.log
+*.docstates
+# Package files
+packages/
+*.nupkg
+# Rider / JetBrains specific files
+.idea/
+# Miscellaneous files
+*.obj
+*.pdb
+*.user
+*.resharper
+*.suo
+*.cache
+# Database files
+*.mdf
+*.ldf
+# Test results
+TestResults/
+# Azure Functions
+local.settings.json
+
+# --- Secrets and Environment Specific Files ---
+# Configuration files specific to development environment (DO NOT COMMIT)
+**/appsettings.Development.json
+**/appsettings.json.user
+**/appsettings.*.user
+**/appsettings.local.json
+
+# Exclude appsettings.json from tests folder if it contains secrets
+# tests/**/appsettings.json # 
+
+# Docker files
+*.dockerignore
+*.env # For .env files if you use them for docker secrets
+
+# User secrets (if you use .NET User Secrets feature)
+.secrets/
