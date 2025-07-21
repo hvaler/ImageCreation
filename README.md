@@ -18,160 +18,141 @@ Este proyecto es una aplicación de ejemplo construida con **ASP.NET Core (.NET 9
 La solución se estructura en los siguientes proyectos (capas):
 
 ```mermaid
-graph TD
-    subgraph Client/UI
-        A[API Client (e.g., Browser, Mobile App)]
+flowchart TD
+    subgraph Client_UI["Client UI"]
+        A["API Client: e.g., Browser, Mobile App"]
     end
-
-    subgraph Presentation Layer (ImageCreation.Api)
-        B[ImagesController]
+    subgraph Presentation_Layer_Api["Presentation Layer (ImageCreation.Api)"]
+        B["ImagesController"]
     end
-
-    subgraph Application Layer (ImageCreation.Application)
-        subgraph Commands
-            C1[CreateImageCommand]
-            C2[ClassifyImageCommand]
-            CH1[CreateImageCommandHandler]
-            CH2[ClassifyImageCommandHandler]
+    subgraph Application_Layer_App["Application Layer (ImageCreation.Application)"]
+        subgraph Commands["Commands"]
+            C1["CreateImageCommand"]
+            C2["ClassifyImageCommand"]
+            CH1["CreateImageCommandHandler"]
+            CH2["ClassifyImageCommandHandler"]
         end
-        subgraph Queries
-            Q1[GetImageByIdQuery]
-            Q2[GetImageBase64Query]
-            Q3[GetClassifiedImageByIdQuery]
-            QH1[GetImageByIdQueryHandler]
-            QH2[GetImageBase64QueryHandler]
-            QH3[GetClassifiedImageByIdQueryHandler]
+        subgraph Queries["Queries"]
+            Q1["GetImageByIdQuery"]
+            Q2["GetImageBase64Query"]
+            Q3["GetClassifiedImageByIdQuery"]
+            QH1["GetImageByIdQueryHandler"]
+            QH2["GetImageBase64QueryHandler"]
+            QH3["GetClassifiedImageByIdQueryHandler"]
         end
-        subgraph Events & Projections
-            DE[IDomainEvent & Concrete Events (e.g.,<br/>ImageCreatedEvent)]
-            P1[ImageRecordProjector]
-            P2[ClassifiedImageRecordProjector]
+        subgraph Events_Projections["Events & Projections"]
+            DE["IDomainEvent & Concrete Events: e.g. ImageCreatedEvent"]
+            P1["ImageRecordProjector"]
+            P2["ClassifiedImageRecordProjector"]
         end
-        subgraph Application Interfaces
-            AI1[ICommandHandler]
-            AI2[IQueryHandler]
-            AI3[IEventStore]
-            AI4[IDapperRepository]
-            AI5[ICacheService]
-            AI6[IOpenAiService]
-            AI7[IImageClassifierService]
-            AI8[IUrlConverterService]
-            AI9[IOpenAiServiceFactory]
+        subgraph Application_Interfaces["Application Interfaces"]
+            AI1["ICommandHandler"]
+            AI2["IQueryHandler"]
+            AI3["IEventStore"]
+            AI4["IDapperRepository"]
+            AI5["ICacheService"]
+            AI6["IOpenAiService"]
+            AI7["IImageClassifierService"]
+            AI8["IUrlConverterService"]
+            AI9["IOpenAiServiceFactory"]
         end
-        subgraph DTOs
-            D1[ImageDto]
-            D2[ClassifiedImageDto]
+        subgraph DTOs["DTOs"]
+            D1["ImageDto"]
+            D2["ClassifiedImageDto"]
         end
     end
-
-    subgraph Domain Layer (ImageCreation.Domain)
-        subgraph Entities & Value Objects
-            E1[ImageRecord]
-            E2[ClassifiedImageRecord]
-            VO1[ImageDescription]
-            VO2[Base64Data]
-            VO3[ImageUrl]
-            VO4[ClassificationResult]
+    subgraph Domain_Layer["Domain Layer (ImageCreation.Domain)"]
+        subgraph Entities_Value_Objects["Entities & Value Objects"]
+            E1["ImageRecord"]
+            E2["ClassifiedImageRecord"]
+            VO1["ImageDescription"]
+            VO2["Base64Data"]
+            VO3["ImageUrl"]
+            VO4["ClassificationResult"]
         end
     end
-
-    subgraph Infrastructure Layer (ImageCreation.Infrastructure)
-        subgraph Persistence & Messaging
-            IP1[EventStoreService]
-            IP2[DapperRepository]
-            IP3[RedisCacheService]
-            IP4[EventStoreSubscriptionService (Hosted Service)]
+    subgraph Infrastructure_Layer["Infrastructure Layer (ImageCreation.Infrastructure)"]
+        subgraph Persistence_Messaging["Persistence & Messaging"]
+            IP1["EventStoreService"]
+            IP2["DapperRepository"]
+            IP3["RedisCacheService"]
+            IP4["EventStoreSubscriptionService: Hosted Service"]
         end
-        subgraph External Services
-            IE1[PublicOpenAiService]
-            IE2[AzureOpenAiService]
-            IE3[AzureVisionClassifierService]
-            IE4[UrlToBase64Converter]
+        subgraph External_Services["External Services"]
+            IE1["PublicOpenAiService"]
+            IE2["AzureOpenAiService"]
+            IE3["AzureVisionClassifierService"]
+            IE4["UrlToBase64Converter"]
         end
-        subgraph Factories
-            IF1[OpenAiServiceFactory]
+        subgraph Factories["Factories"]
+            IF1["OpenAiServiceFactory"]
         end
     end
-
-    subgraph External Systems
-        ES1[EventStoreDB]
-        ES2[SQL Server Database]
-        ES3[Redis Cache]
-        ES4[OpenAI/Azure OpenAI API]
-        ES5[Azure AI Vision API]
+    subgraph External_Systems["External Systems"]
+        ES1["EventStoreDB"]
+        ES2["SQL Server Database"]
+        ES3["Redis Cache"]
+        ES4["OpenAI/Azure OpenAI API"]
+        ES5["Azure AI Vision API"]
     end
-
-    subgraph Testing Layer (ImageCreation.Tests)
-        T[Unit/Integration Tests]
+    subgraph Testing_Layer["Testing Layer (ImageCreation.Tests)"]
+        T["Unit/Integration Tests"]
     end
-
-    A --> B: HTTP Requests (Commands/Queries)
-    B --> CH1: Dispatches CreateImageCommand
-    B --> CH2: Dispatches ClassifyImageCommand
-    B --> QH1: Dispatches GetImageByIdQuery
-    B --> QH2: Dispatches GetImageBase64Query
-    B --> QH3: Dispatches GetClassifiedImageByIdQuery
-
-    CH1 --> AI9: Requests IOpenAiService from Factory
-    CH1 --> AI3: Publishes IDomainEvent
-    CH2 --> AI8: Requests IUrlConverterService for Base64 conversion
-    CH2 --> AI7: Requests IImageClassifierService for classification
-    CH2 --> AI3: Publishes IDomainEvent
-
-    AI9 --> IF1: Uses OpenAiServiceFactory
-    IF1 --> IE1: Returns PublicOpenAiService
-    IF1 --> IE2: Returns AzureOpenAiService
-
-    AI7 --> IE3: Uses AzureVisionClassifierService
-    IE3 --> AI8: Requests IUrlConverterService for image download
-
-    QH1 --> AI5: Reads from ICacheService
-    QH1 --> AI4: Reads from IDapperRepository
-    QH2 --> AI5: Reads from ICacheService
-s    QH2 --> AI4: Reads from IDapperRepository
-    QH3 --> AI5: Reads from ICacheService
-    QH3 --> AI4: Reads from IDapperRepository
-
-    AI3 --> IP1: Implemented by EventStoreService
-    AI4 --> IP2: Implemented by DapperRepository
-    AI5 --> IP3: Implemented by RedisCacheService
-    AI6 --> IE1: Implemented by PublicOpenAiService
-    AI6 --> IE2: Implemented by AzureOpenAiService
-    AI7 --> IE3: Implemented by AzureVisionClassifierService
-    AI8 --> IE4: Implemented by UrlToBase64Converter
-    AI9 --> IF1: Implemented by OpenAiServiceFactory
-
-    IP1 --> ES1: Persists Events
-    IP4 --> ES1: Subscribes to Events
-
-    ES1 --> IP4: Publishes Events to Subscription Service
-    IP4 --> P1: Routes ImageCreatedEvent
-    IP4 --> P2: Routes ImageClassifiedEvent
-
-    P1 --> AI4: Writes to IDapperRepository (SQL Read Model)
-    P1 --> AI5: Writes to ICacheService (Redis Read Model)
-    P2 --> AI4: Writes to IDapperRepository (SQL Read Model)
-    P2 --> AI5: Writes to ICacheService (Redis Read Model)
-
-    IP2 --> ES2: Interacts with SQL Server
-    IP3 --> ES3: Interacts with Redis
-
-    IE1 --> ES4: Calls OpenAI/Azure OpenAI API
-    IE2 --> ES4: Calls OpenAI/Azure OpenAI API
-    IE3 --> ES5: Calls Azure AI Vision API
-    IE4 --> B: (Direct HTTP Call from HttpClient) - not directly to external system, but a utility
-
-    E1 <--> VO1, VO2
-    E2 <--> VO3, VO2, VO4
-
-    CH1 --> E1: Creates/Uses ImageRecord
-    CH2 --> E2: Creates/Uses ClassifiedImageRecord
-    E1 --> DE: Creates ImageCreatedEvent
-    E2 --> DE: Creates ImageClassifiedEvent
-
-    B --> D1, D2: Returns DTOs
+    A -- HTTP Requests (Commands/Queries) --> B
+    B -- Dispatches ClassifyImageCommand --> CH2
+    B -- Dispatches GetImageByIdQuery --> QH1
+    B -- Dispatches GetImageBase64Query --> QH2
+    B -- Dispatches GetClassifiedImageByIdQuery --> QH3
+    CH1 -- Requests IOpenAiService from Factory --> AI9
+    CH1 -- Publishes IDomainEvent --> AI3
+    CH2 -- Requests IUrlConverterService for Base64 conversion --> AI8
+    CH2 -- Requests IImageClassifierService for classification --> AI7
+    CH2 -- Publishes IDomainEvent --> AI3
+    AI9 -- Uses OpenAiServiceFactory --> IF1
+    IF1 -- Returns PublicOpenAiService --> IE1
+    IF1 -- Returns AzureOpenAiService --> IE2
+    AI7 -- Uses AzureVisionClassifierService --> IE3
+    IE3 -- Requests IUrlConverterService for image download --> AI8
+    QH1 -- Reads from ICacheService --> AI5
+    QH1 -- Reads from IDapperRepository --> AI4
+    QH2 -- Reads from ICacheService --> AI5
+    QH2 -- Reads from IDapperRepository --> AI4
+    QH3 -- Reads from ICacheService --> AI5
+    QH3 -- Reads from IDapperRepository --> AI4
+    AI3 -- Implemented by EventStoreService --> IP1
+    AI4 -- Implemented by DapperRepository --> IP2
+    AI5 -- Implemented by RedisCacheService --> IP3
+    AI6 -- Implemented by PublicOpenAiService --> IE1
+    AI6 -- Implemented by AzureOpenAiService --> IE2
+    AI7 -- Implemented by AzureVisionClassifierService --> IE3
+    AI8 -- Implemented by UrlToBase64Converter --> IE4
+    AI9 -- Implemented by OpenAiServiceFactory --> IF1
+    IP1 -- Persists Events --> ES1
+    IP4 -- Subscribes to Events --> ES1
+    ES1 -- Publishes Events to Subscription Service --> IP4
+    IP4 -- Routes ImageCreatedEvent --> P1
+    IP4 -- Routes ImageClassifiedEvent --> P2
+    P1 -- Writes to IDapperRepository (SQL Read Model) --> AI4
+    P1 -- Writes to ICacheService (Redis Read Model) --> AI5
+    P2 -- Writes to IDapperRepository (SQL Read Model) --> AI4
+    P2 -- Writes to ICacheService (Redis Read Model) --> AI5
+    IP2 -- Interacts with SQL Server --> ES2
+    IP3 -- Interacts with Redis --> ES3
+    IE1 -- Calls OpenAI/Azure OpenAI API --> ES4
+    IE2 -- Calls OpenAI/Azure OpenAI API --> ES4
+    IE3 -- Calls Azure AI Vision API --> ES5
+    IE4 -- (Direct HTTP Call from HttpClient) --> B
+    E1 <--> VO1
+    E1 <--> VO2
+    E2 <--> VO3
+    E2 <--> VO2
+    E2 <--> VO4
+    CH1 -- Creates/Uses ImageRecord --> E1
+    CH2 -- Creates/Uses ClassifiedImageRecord --> E2
+    E1 -- Creates ImageCreatedEvent --> DE
+    E2 -- Creates ImageClassifiedEvent --> DE
+    B --> D1
+    B -- Returns DTOs --> D2
     QH1 --> D1
     QH2 --> D1
     QH3 --> D2
-
-    T --> B, C1, C2, CH1, CH2, Q1, Q2, Q3, QH1, QH2, QH3, DE, P1, P2, E1, E2, VO1, VO2, VO3, VO4, IP1, IP2, IP3, IP4, IE1, IE2, IE3, IE4, IF1: Tests components and interactions.
