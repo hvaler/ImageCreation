@@ -25,9 +25,8 @@ namespace ImageCreation.Infrastructure.Services
             "azure" => _serviceProvider.GetRequiredService<AzureOpenAiService>(),
             "public" => _serviceProvider.GetRequiredService<PublicOpenAiService>(),
             "stability" => _serviceProvider.GetRequiredService<StabilityAIService>(),
-            "google" => _serviceProvider.GetRequiredService<GoogleCloudAIService>(),
+            "google" => _serviceProvider.GetRequiredService<GoogleGenerativeAIService>(),
             "huggingface" => _serviceProvider.GetRequiredService<HuggingFaceService>(),
-            "gemini" => _serviceProvider.GetRequiredService<GeminiProImageService>(),
             _ => _serviceProvider.GetRequiredService<PublicOpenAiService>(), // Fallback si la plataforma no es reconocida
          };
       }

@@ -5,8 +5,8 @@ Este documento describe la arquitectura de la aplicación **ImageCreation**, una 
 ## 1. Visión General de la Aplicación
 
 La aplicación **ImageCreation** expone una API RESTful para:
-* Generar imágenes a partir de descripciones de texto utilizando servicios de IA como OpenAI o Azure OpenAI.
-* Clasificar imágenes existentes a partir de URLs utilizando servicios de IA como Azure Vision.
+* Generar imágenes a partir de descripciones de texto utilizando diferentes proveedores de inteligencia artificial (IA).
+* Clasificar imágenes existentes a partir de URLs utilizando servicios de visión artificial.
 * Consultar información sobre las imágenes generadas y clasificadas.
 
 El sistema utiliza **Event Store DB** como su principal mecanismo de persistencia para los eventos de dominio, y mantiene vistas materializadas en una **base de datos SQL** (para consultas optimizadas) y **Redis** (para caché).
@@ -43,12 +43,12 @@ Esta es la capa de orquestación y lógica de negocio específica de la aplicación.
     * Contener los Proyectores para mantener las vistas materializadas.
 * **Componentes Clave**:
     * **Comandos (`Commands`)**: Objetos inmutables que representan intenciones de cambiar el estado del sistema. Ejemplos: `CreateImageCommand`, `ClassifyImageCommand`.
-    * **DTOs (`DTOs`)**: Objetos para transferir datos entre capas. Ejemplos: `ImageDto`, `ClassifiedImageDto`.
+    * **DTOs (`DTOs`)**: Objetos para transferir datos entre capas. Ejemplos: `ImageDto` (ahora incluye `PlatformUsed`), `ClassifiedImageDto`.
     * **Handlers (`Handlers`)**:
-        * `Command Handlers` (ej. `CreateImageCommandHandler`, `ClassifyImageCommandHandler`): Contienen la lógica de negocio para procesar comandos, interactúan con el dominio (ej. creando `ImageRecord` o `ClassifiedImageRecord` y publicando eventos a `IEventStore`). Son la única fuente de cambio de estado en el sistema.
+        * `Command Handlers` (ej. `CreateImageCommandHandler`, `ClassifyImageCommandHandler`): Contienen la lógica de negocio para procesar comandos, interactúan con el dominio (ej. creando `ImageRecord` o `ClassifiedImageRecord` y publicando eventos a `IEventStore`). Son la única fuente de cambio de estado en el sistema. `CreateImageCommandHandler` ahora usa `PlatformRequested` para determinar el servicio de IA.
         * `Query Handlers` (ej. `GetImageByIdQueryHandler`, `GetImageBase64QueryHandler`, `GetClassifiedImageByIdQueryHandler`): Se encargan de recuperar datos de las vistas materializadas (usando `IDapperRepository` y `ICacheService`) sin modificar el estado. Implementan el patrón Cache-Aside.
     * **Consultas (`Queries`)**: Objetos inmutables que encapsulan los parámetros para la recuperación de datos. Ejemplos: `GetImageByIdQuery`, `GetImageBase64Query`, `GetClassifiedImageByIdQuery`.
-    * **Proyectores (`Projections`)**: Componentes clave en Event Sourcing. Escuchan eventos de dominio desde Event Store DB (`EventStoreSubscriptionService` en la capa de infraestructura) y actualizan las vistas materializadas en la base de datos SQL y Redis. Garantizan la **idempotencia** en sus operaciones de persistencia. Ejemplos: `ImageRecordProjector`, `ClassifiedImageRecordProjector`.
+    * **Proyectores (`Projections`)**: Componentes clave en Event Sourcing. Escuchan eventos de dominio desde Event Store DB (`EventStoreSubscriptionService` en la capa de infraestructura) y actualizan las vistas materializadas en la base de datos SQL y Redis. Garantizan la **idempotencia** en sus operaciones de persistencia. Ejemplos: `ImageRecordProjector` (ahora procesa `PlatformUsed`), `ClassifiedImageRecordProjector`.
     * **Interfaces (`Interfaces`)**: Define los contratos que la capa de aplicación espera de la infraestructura, promoviendo el Principio de Inversión de Dependencias. Ejemplos: `ICommandHandler`, `IQueryHandler`, `IOpenAiService`, `IEventStore`, `ICacheService`, `IDapperRepository`, `IUrlConverterService`, `IOpenAiServiceFactory`.
 
 ### 2.3. `ImageCreation.Domain` (Capa de Dominio)
@@ -61,9 +61,9 @@ Esta es la capa central de la aplicación, conteniendo la lógica de negocio funda
     * Definir los Eventos de Dominio como la "fuente de verdad".
     * Implementar validaciones intrínsecas para asegurar la validez del modelo.
 * **Componentes Clave**:
-    * **Entidades (`Entities`)**: Objetos con identidad única y mutable. Ejemplos: `ImageRecord`, `ClassifiedImageRecord`.
-    * **Value Objects (`ValueObjects`)**: Objetos inmutables definidos por sus atributos, con validación intrínseca. Ejemplos: `ImageDescription`, `Base64Data`, `ClassificationResult`, `ImageUrl`.
-    * **Eventos de Dominio (`Events`)**: Hechos inmutables que ocurrieron en el dominio, sirviendo como la fuente de verdad. Ejemplos: `ImageCreatedEvent`, `ImageClassifiedEvent`. `IDomainEvent` es una interfaz de marcador.
+    * **Entidades (`Entities`)**: Objetos con identidad única y mutable. Ejemplos: `ImageRecord` (ahora incluye `PlatformUsed`), `ClassifiedImageRecord`.
+    * **Value Objects (`ValueObjects`)**: Objetos inmutables definidos por sus atributos, con validación intrínseca. Ejemplos: `ImageDescription`, `Base64Data`, `ClassificationResult`, `ImageUrl`, y el **nuevo `Platform`**.
+    * **Eventos de Dominio (`Events`)**: Hechos inmutables que ocurrieron en el dominio, sirviendo como la fuente de verdad. Ejemplos: `ImageCreatedEvent` (ahora incluye `PlatformUsed`), `ImageClassifiedEvent`. `IDomainEvent` es una interfaz de marcador.
 
 ### 2.4. `ImageCreation.Infrastructure` (Capa de Infraestructura)
 
@@ -72,19 +72,28 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
 * **Responsabilidades**:
     * Acceso a bases de datos (SQL Server, Event Store DB).
     * Integración con servicios de caché (Redis).
-    * Comunicación con APIs de inteligencia artificial (OpenAI, Azure Vision).
+    * Comunicación con APIs de inteligencia artificial.
     * Manejo de operaciones de E/S de red (descarga de imágenes).
     * Ejecución de servicios en segundo plano.
 * **Componentes Clave**:
     * **Servicios de Persistencia**:
-        * `DapperRepository`: Implementación de `IDapperRepository` para SQL Server usando Dapper. Utiliza `MERGE` para idempotencia.
+        * `DapperRepository`: Implementación de `IDapperRepository` para SQL Server usando Dapper. Utiliza `MERGE` para idempotencia. Ahora soporta la nueva columna `PlatformUsed` en la tabla `Images`.
         * `EventStoreService`: Implementación de `IEventStore` para publicar eventos en Event Store DB.
     * **Servicios de Caché**:
         * `RedisCacheService`: Implementación de `ICacheService` para interactuar con Redis.
     * **Servicios de IA y Utilidades**:
-        * `OpenAiServiceFactory`: Implementación de `IOpenAiServiceFactory` para seleccionar entre servicios OpenAI.
+        * `OpenAiServiceFactory`: Implementación de `IOpenAiServiceFactory`. Este es un **componente clave** que ahora utiliza `IServiceProvider` para la **inicialización perezosa** de los servicios de IA, lo que permite que la aplicación arranque incluso si algunas credenciales de IA no están configuradas.
         * `PublicOpenAiService`: Implementación de `IOpenAiService` para la API pública de OpenAI.
         * `AzureOpenAiService`: Implementación de `IOpenAiService` para Azure OpenAI.
+        * `StabilityAIService`: Implementación de `IOpenAiService` para la API de Stability AI (ej. Stable Image Core, Ultra, o SD3). Ahora envía las solicitudes como `multipart/form-data` con los parámetros directos, y lee el modelo por defecto desde la configuración (`DefaultModel`).
+        * **`GoogleGenerativeAIService` (Unificado)**: **Nueva clase que reemplaza a `GoogleCloudAIService` y `GeminiProImageService`**.
+            * **Propósito**: Permite la generación de imágenes con los modelos **Imagen** de Google (como `imagen-4.0-generate-preview-06-06`) a través de la Generative Language API.
+            * **Dependencias**: `HttpClient`, `IConfiguration` (para `ApiKey`, `DefaultImageModel`, `DefaultTextModel`, `ApiVersion`), `ILogger`.
+            * **Detalles**:
+                * Configura el endpoint y pasa la API Key como un parámetro de consulta en la URL.
+                * Construye el cuerpo de la solicitud JSON con `instances` y `parameters` (que contiene `outputMimeType`, `sampleCount`, etc.).
+                * Está diseñado para acceder a modelos de generación de imágenes como `imagen-4.0-generate-preview-06-06`, los cuales **requieren facturación habilitada** en el proyecto de Google Cloud para funcionar.
+                * También podría gestionar modelos de texto como `gemini-pro` si se extienden sus capacidades, pero en `GenerateImageAsync` solo usa el modelo de Imagen configurado.
         * `UrlToBase64Converter`: Implementación de `IUrlConverterService` para descargar y convertir URLs a Base64.
         * `AzureVisionClassifierService`: Implementación de `IImageClassifierService` para clasificar imágenes con Azure AI Vision.
     * **Servicios de Fondo**:
@@ -96,13 +105,14 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
 
 1.  **`ImageCreation.Api`**: Cliente envía `POST /api/Images/generate`. `ImagesController` recibe la petición, valida y crea `CreateImageCommand`.
 2.  **`ImageCreation.Application`**: El controlador invoca `CreateImageCommandHandler`.
-3.  `CreateImageCommandHandler` utiliza `IOpenAiServiceFactory` para obtener `IOpenAiService` (Public o Azure) y genera la imagen.
-4.  `CreateImageCommandHandler` crea un `ImageRecord` y publica un `ImageCreatedEvent` en Event Store DB a través de `IEventStore`.
-5.  **`ImageCreation.Infrastructure`**: `EventStoreService` serializa y persiste el evento.
-6.  **`ImageCreation.Infrastructure` (Servicio de Fondo)**: `EventStoreSubscriptionService` consume el `ImageCreatedEvent` de Event Store DB.
-7.  **`ImageCreation.Application`**: `EventStoreSubscriptionService` delega el evento a `ImageRecordProjector`.
-8.  `ImageRecordProjector` reconstruye `ImageRecord`, lo persiste de forma idempotente en SQL (`IDapperRepository`) y guarda el `ImageDto` en Redis (`ICacheService`).
-9.  **`ImageCreation.Api`**: `ImagesController` devuelve `201 Created` con el `ImageDto`.
+3.  `CreateImageCommandHandler` utiliza `IOpenAiServiceFactory` para obtener `IOpenAiService` (Public, Azure, Stability, Google, HuggingFace, o Gemini). La selección se basa en `platformRequested` del comando.
+4.  El servicio de IA seleccionado (ej., `StabilityAIService` o `GoogleGenerativeAIService`) genera la imagen. Si el servicio de Google Imagen es seleccionado y la facturación no está habilitada en el proyecto de GCP, la API rechazará la solicitud. Para Gemini Pro/Flash, el modelo de lenguaje generará texto y la implementación actual lo simulará como Base64.
+5.  `CreateImageCommandHandler` crea un `ImageRecord` (ahora incluyendo la `PlatformUsed`) y publica un `ImageCreatedEvent` en Event Store DB a través de `IEventStore`.
+6.  **`ImageCreation.Infrastructure`**: `EventStoreService` serializa y persiste el evento.
+7.  **`ImageCreation.Infrastructure` (Servicio de Fondo)**: `EventStoreSubscriptionService` consume el `ImageCreatedEvent` de Event Store DB.
+8.  **`ImageCreation.Application`**: `EventStoreSubscriptionService` delega el evento a `ImageRecordProjector`.
+9.  `ImageRecordProjector` reconstruye `ImageRecord` (incluyendo `PlatformUsed`), lo persiste de forma idempotente en SQL (`IDapperRepository`) y guarda el `ImageDto` (también con `PlatformUsed`) en Redis (`ICacheService`).
+10. **`ImageCreation.Api`**: `ImagesController` devuelve `201 Created` con el `ImageDto`.
 
 ### 3.2. Consulta de Imágenes (Consulta `GetImageByIdQuery`)
 
@@ -110,14 +120,14 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
 2.  **`ImageCreation.Application`**: El controlador invoca `GetImageByIdQueryHandler`.
 3.  `GetImageByIdQueryHandler` primero intenta recuperar el `ImageDto` de `ICacheService` (Redis).
 4.  Si no está en caché, `GetImageByIdQueryHandler` consulta `IDapperRepository` para obtener el `ImageRecord` desde la base de datos SQL.
-5.  Si se encuentra en SQL, se convierte a `ImageDto` y se almacena en caché.
+5.  Si se encuentra en SQL, se convierte a `ImageDto` (incluyendo `PlatformUsed`) y se almacena en caché.
 6.  **`ImageCreation.Api`**: `ImagesController` devuelve `200 OK` con `ImageDto` o `404 Not Found`.
 
 ## 4. Patrones de Diseño Clave
 
 * **CQRS (Command Query Responsibility Segregation)**: Clara separación de responsabilidades entre las operaciones de escritura (comandos) y lectura (consultas), cada una con sus propios modelos y handlers.
 * **Event Sourcing**: Event Store DB es la fuente de verdad. Todos los cambios de estado se registran como una secuencia inmutable de Eventos de Dominio.
-* **Entidades y Value Objects**: Modelan el dominio, encapsulando estado, comportamiento y validaciones.
+* **Entidades y Value Objects**: Modelan el dominio, encapsulando estado, comportamiento y validaciones. La adición del Value Object `Platform` para la plataforma de generación es un ejemplo.
 * **Proyecciones / Vistas Materializadas**: Modelos de lectura optimizados que se construyen y mantienen actualizados asíncronamente a partir de los eventos de dominio.
 * **Inyección de Dependencias (DI)**: Utilizado extensivamente para desacoplar los componentes, inyectando interfaces en lugar de implementaciones concretas.
 * **Principios SOLID**:
@@ -127,7 +137,7 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
     * **Dependency Inversion Principle (DIP)**: Las capas de alto nivel (Application) no dependen de las capas de bajo nivel (Infrastructure); ambas dependen de abstracciones (interfaces).
 * **Repository Pattern**: Abstrae las operaciones de persistencia de datos (en `DapperRepository`).
 * **Cache-Aside Pattern**: Estrategia para usar la caché, visible en los Query Handlers.
-* **Fábrica Abstracta (Factory Pattern)**: `IOpenAiServiceFactory` para la creación de servicios de IA.
+* **Fábrica Abstracta (Factory Pattern)**: `IOpenAiServiceFactory` para la creación de servicios de IA, ahora con **inicialización perezosa**.
 * **Hosted Services**: Para ejecutar lógica de fondo (ej. `EventStoreSubscriptionService`).
 * **Idempotencia**: Crucial en los proyectores para manejar eventos duplicados en un sistema distribuido.
 
@@ -141,6 +151,7 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
 * **Dapper**: Micro-ORM para acceso a datos SQL.
 * **OpenAI SDK (.NET)**: Para interactuar con OpenAI API.
 * **Azure AI SDKs**: Para interactuar con Azure OpenAI y Azure Vision.
+* **Google.AI.GenerativeLanguage NuGet Package**: Para interactuar con la Generative Language API de Google (incluyendo modelos Gemini e Imagen).
 * **Newtonsoft.Json**: Para la serialización/deserialización de eventos de dominio (para compatibilidad con Event Store DB).
 * **Microsoft.Extensions.Logging**: Para el registro de logs.
 
@@ -152,3 +163,5 @@ Esta capa proporciona las implementaciones concretas de las interfaces definidas
 * **Despliegue**: Contenerización con Docker y orquestación con Kubernetes para un despliegue y escalado robusto.
 * **Manejo de Errores Avanzado**: Implementar colas de mensajes muertas (DLQ) para eventos que fallan persistentemente en los proyectores.
 * **Versionado de Eventos**: Implementar una estrategia explícita para el versionado de eventos de dominio a medida que la aplicación evoluciona.
+* **Políticas de Contenido de IA**: Continuar siendo consciente de las estrictas políticas de contenido de los proveedores de IA, especialmente Google, que pueden rechazar prompts por razones de seguridad o ética.
+* **Modelos de Pago**: Los modelos avanzados de generación de imágenes como Google Imagen a menudo requieren facturación habilitada en las cuentas de proveedor.

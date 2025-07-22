@@ -20,9 +20,9 @@ var config = builder.Configuration;
 builder.Services.AddTransient<PublicOpenAiService>();
 builder.Services.AddTransient<AzureOpenAiService>();
 builder.Services.AddTransient<StabilityAIService>();
-builder.Services.AddTransient<GoogleCloudAIService>();
+builder.Services.AddTransient<GoogleGenerativeAIService>();
 builder.Services.AddTransient<HuggingFaceService>();
-builder.Services.AddTransient<GeminiProImageService>();
+
 
 
 // Registra la fábrica de OpenAI.

@@ -4,7 +4,7 @@
 
 ## 🚀 Características Principales
 
-* **Generación de Imágenes**: Crea imágenes a partir de descripciones textuales utilizando diferentes proveedores de IA (OpenAI, Azure OpenAI).
+* **Generación de Imágenes**: Crea imágenes a partir de descripciones textuales utilizando diferentes proveedores de IA: OpenAI (DALL-E), Azure OpenAI, Stability AI (Stable Diffusion), Google Generative AI (modelos Imagen y Gemini), y Hugging Face.
 * **Clasificación de Imágenes**: Analiza imágenes de una URL y las clasifica en categorías predefinidas (ej. "Food", "Person") utilizando servicios de visión artificial (Azure AI Vision).
 * **API RESTful**: Interfaz programática para interactuar con todas las funcionalidades de la aplicación.
 * **Event Sourcing**: Todos los cambios de estado se registran como eventos inmutables en Event Store DB, proporcionando una auditoría completa y capacidades de "viaje en el tiempo".
@@ -20,6 +20,9 @@
 * **Generación de Imágenes**:
     * [OpenAI API](https://openai.com/)
     * [Azure OpenAI Service](https://azure.microsoft.com/es-es/products/ai-services/openai-service)
+    * [Stability AI](https://stability.ai/) (Stable Diffusion)
+    * [Google Generative AI](https://ai.google.dev/) (Modelos Imagen y Gemini)
+    * [Hugging Face](https://huggingface.co/)
 * **Clasificación de Imágenes**:
     * [Azure AI Vision](https://azure.microsoft.com/es-es/products/ai-services/ai-vision)
 * **Logging**: Microsoft.Extensions.Logging
@@ -41,7 +44,7 @@ Para ejecutar esta aplicación localmente, necesitarás:
 
 1.  **.NET SDK 8.0 o superior**
 2.  **Docker Desktop** (para ejecutar SQL Server, Redis y Event Store DB como contenedores)
-3.  **Claves API** para OpenAI, Azure OpenAI y Azure Vision (configuradas en `appsettings.Development.json` o variables de entorno).
+3.  **Claves API** para los servicios de IA que desees probar (configuradas en `appsettings.Development.json` o variables de entorno).
 
 **Pasos:**
 
@@ -51,7 +54,7 @@ Para ejecutar esta aplicación localmente, necesitarás:
     cd ImageCreation
     ```
 2.  **Configurar `appsettings.Development.json`:**
-    Asegúrate de que tu `appsettings.Development.json` en el proyecto `ImageCreation.Api` contenga tus cadenas de conexión y claves API. Un ejemplo base se proporciona en `appsettings.json`, pero para desarrollo, usa el archivo `appsettings.Development.json`.
+    Asegúrate de que tu `appsettings.Development.json` en el proyecto `ImageCreation.Api` contenga tus cadenas de conexión y claves API. Un ejemplo de la estructura se proporciona a continuación.
 
     ```json
     // ImageCreation.Api/appsettings.Development.json
@@ -62,18 +65,34 @@ Para ejecutar esta aplicación localmente, necesitarás:
           "EventStoreConnection": "esdb://localhost:2113?tls=false"
        },
        "OpenAI": {
-          "Platform": "Public", // o "Azure"
+          "Platform": "Public",
           "ApiKey": "sk-proj-YOUR_PUBLIC_OPENAI_API_KEY"
        },
        "AzureOpenAI": {
           "Platform": "Azure",
           "Endpoint": "[https://your-azure-openai-resource.openai.azure.com/](https://your-azure-openai-resource.openai.azure.com/)",
           "ApiKey": "YOUR_AZURE_OPENAI_API_KEY",
-          "DeploymentName": "dall-e-3" // Nombre de tu despliegue DALL-E en Azure
+          "DeploymentName": "dall-e-3"
        },
        "AzureVision": {
           "Endpoint": "[https://your-azure-vision-resource.cognitiveservices.azure.com/](https://your-azure-vision-resource.cognitiveservices.azure.com/)",
           "ApiKey": "YOUR_AZURE_VISION_API_KEY"
+       },
+       "StabilityAI": {
+          "Platform": "Stability",
+          "ApiKey": "sk-YOUR_STABILITY_AI_API_KEY",
+          "DefaultModel": "core" // Puedes usar "ultra" o "sd3"
+       },
+       "GoogleGenerativeAI": { // Configuración unificada para Google AI (Imagen y Gemini)
+          "ApiKey": "YOUR_GOOGLE_GENERATIVE_AI_API_KEY", // Clave de Google AI Studio (generativelanguage.googleapis.com)
+          "DefaultImageModel": "imagen-4.0-generate-preview-06-06", // Modelo para generación de imágenes (requiere facturación)
+          "DefaultTextModel": "gemini-pro", // Modelo para generación de texto/conversación
+          "ApiVersion": "v1beta"
+       },
+       "HuggingFace": {
+          "Platform": "HuggingFace",
+          "Endpoint": "[https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0](https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0)", // Reemplaza con el modelo que quieras
+          "ApiKey": "hf_YOUR_HUGGING_FACE_TOKEN"
        },
        "Logging": {
           "LogLevel": {
@@ -83,15 +102,13 @@ Para ejecutar esta aplicación localmente, necesitarás:
        }
     }
     ```
-    **Importante**: Reemplaza `Your_Strong_Password_Here`, `YOUR_PUBLIC_OPENAI_API_KEY`, `your-azure-openai-resource.openai.azure.com/`, `YOUR_AZURE_OPENAI_API_KEY`, `dall-e-3`, `your-azure-vision-resource.cognitiveservices.azure.com/` y `YOUR_AZURE_VISION_API_KEY` con tus propios valores.
+    **Importante**: Reemplaza todos los valores `YOUR_..._KEY` o `your-...-resource` con tus propias credenciales y configuraciones.
 
-3.  **Iniciar los Contenedores de Docker:**
-    Necesitas ejecutar SQL Server, Redis y Event Store DB. Si tienes un `docker-compose.yml` en tu repositorio, puedes usar:
-    ```bash
-    docker-compose up -d
-    ```
-    Si no, necesitarás iniciar cada contenedor individualmente.
+3.  **Instalar Paquetes NuGet (si es la primera vez o si hay cambios):**
+    Asegúrate de que los paquetes necesarios estén instalados en tus proyectos. Por ejemplo, `Google.AI.GenerativeLanguage` para la integración de Google AI, `StackExchange.Redis` para Redis, `Dapper` para SQL, etc.
 
+4.  **Iniciar los Contenedores de Docker:**
+    Asegúrate de que SQL Server, Redis y Event Store DB estén corriendo. Puedes usar `docker-compose.yml` si tienes uno configurado para tu proyecto. Si no:
     * **SQL Server (ejemplo):**
         ```bash
         docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Your_Strong_Password_Here" -p 1433:1433 --name sqlserver_images -d [mcr.microsoft.com/mssql/server:2019-latest](https://mcr.microsoft.com/mssql/server:2019-latest)
@@ -105,17 +122,18 @@ Para ejecutar esta aplicación localmente, necesitarás:
         docker run -p 2113:2113 -p 1113:1113 --name eventstore_images -e EVENTSTORE_ENABLE_EXTERNAL_TCP=true -e EVENTSTORE_INSECURE=true -e EVENTSTORE_RUN_PROJECTIONS=All -d eventstore/eventstore:latest
         ```
     * **Crear la Base de Datos y Tablas (SQL Server):**
-        Una vez que SQL Server esté corriendo, necesitarás crear la base de datos `ImagesDb` y las tablas `Images` y `ClassifiedImages`. Puedes usar un cliente SQL (Azure Data Studio, SSMS) o un script de migración si lo tienes.
-        Ejemplo de DDL (Data Definition Language) básico para las tablas:
+        Una vez que SQL Server esté corriendo, crea la base de datos `ImagesDb` y las tablas `Images` y `ClassifiedImages`. **Asegúrate de añadir la columna `PlatformUsed` a la tabla `Images`**.
         ```sql
-        -- ImagesDb
+        -- SQL para la tabla Images (ejemplo, incluye PlatformUsed)
         CREATE TABLE Images (
             Id UNIQUEIDENTIFIER PRIMARY KEY,
             Description NVARCHAR(500) NOT NULL,
             Base64Data NVARCHAR(MAX) NOT NULL,
+            PlatformUsed NVARCHAR(50) NOT NULL DEFAULT 'Public', -- ¡NUEVA COLUMNA!
             CreatedAt DATETIME2 NOT NULL
         );
 
+        -- SQL para la tabla ClassifiedImages
         CREATE TABLE ClassifiedImages (
             Id UNIQUEIDENTIFIER PRIMARY KEY,
             OriginalUrl NVARCHAR(MAX) NOT NULL,
@@ -125,15 +143,16 @@ Para ejecutar esta aplicación localmente, necesitarás:
         );
         ```
 
-4.  **Ejecutar la Aplicación ASP.NET Core:**
+5.  **Ejecutar la Aplicación ASP.NET Core:**
     Navega al directorio del proyecto `ImageCreation.Api` y ejecuta:
     ```bash
     dotnet run
     ```
     La API se iniciará, usualmente en `https://localhost:7000` (o el puerto que configure tu proyecto).
 
-5.  **Acceder a Swagger UI:**
-    Abre tu navegador y ve a `https://localhost:7000/swagger` (o el puerto correspondiente). Podrás interactuar con los endpoints de la API.
+6.  **Acceder a Swagger UI y Probar:**
+    Abre tu navegador y ve a `https://localhost:7000/swagger`. Podrás interactuar con los endpoints de la API.
+    * Para generar imágenes, usa `POST /api/Images/generate`. En el cuerpo de la solicitud, especifica la plataforma deseada en `platformRequested` (ej., `"Public"`, `"Azure"`, `"Stability"`, `"Google"`, `"HuggingFace"`). Recuerda que algunos modelos (como Google Imagen) pueden requerir facturación activa y que las APIs de texto de Gemini tienen estrictas políticas de contenido para prompts.
 
 ## 🤝 Contribución
 
@@ -141,6 +160,6 @@ Para ejecutar esta aplicación localmente, necesitarás:
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la [Licencia MIT](https://opensource.org/licenses/MIT).
 
 ---
