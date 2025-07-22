@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 // using System.Text.Json; // <-- ELIMINAR ESTE USING
-using Newtonsoft.Json; // <-- ¡NUEVO USING!
+using Newtonsoft.Json;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.EventSourcing
 {
    public class EventStoreService : IEventStore
    {

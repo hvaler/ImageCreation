@@ -9,7 +9,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization; // Para JsonPropertyName
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.AI.Google
 {
    public class GoogleGenerativeAIService : IOpenAiService
    {

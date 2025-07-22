@@ -1,7 +1,7 @@
 ﻿using Azure;
 using Azure.AI.Vision.ImageAnalysis;
 
-using ImageCreation.Application.Interfaces; 
+using ImageCreation.Application.Interfaces;
 using ImageCreation.Domain.ValueObjects;
 using ImageCreation.Infrastructure.Interfaces;
 
@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.AI.Vision
 {
    
    public class AzureVisionClassifierService : IImageClassifierService

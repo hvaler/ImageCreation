@@ -1,11 +1,15 @@
 ﻿// ImageCreation.Infrastructure.Services/OpenAiServiceFactory.cs
 using ImageCreation.Application.Interfaces;
+using ImageCreation.Infrastructure.Services.AI.Google;
+using ImageCreation.Infrastructure.Services.AI.HuggingFace;
+using ImageCreation.Infrastructure.Services.AI.OpenAI;
+using ImageCreation.Infrastructure.Services.AI.Stability;
 
 using Microsoft.Extensions.DependencyInjection; // ¡NUEVO! Para IServiceProvider
 
 using System; // Para ArgumentNullException
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.Factories
 {
    public class OpenAiServiceFactory : IOpenAiServiceFactory
    {

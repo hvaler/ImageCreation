@@ -34,7 +34,7 @@ La aplicación sigue una arquitectura de diseño limpio con las siguientes capas
 * **`ImageCreation.Api`**: La capa de presentación que expone la API RESTful.
 * **`ImageCreation.Application`**: Contiene la lógica de negocio de la aplicación, definiendo comandos, consultas, DTOs, handlers y proyectores.
 * **`ImageCreation.Domain`**: El núcleo de la aplicación, con el modelo de dominio rico, Value Objects y Eventos de Dominio.
-* **`ImageCreation.Infrastructure`**: Proporciona las implementaciones concretas para la persistencia de datos (SQL, Event Store DB), la caché (Redis) y la integración con servicios externos de IA.
+* **`ImageCreation.Infrastructure`**: Proporciona las implementaciones concretas para la persistencia de datos (SQL, Event Store DB), la caché (Redis) y la integración con servicios externos de IA. Sus servicios están organizados en subcarpetas para mayor claridad (ej., `AI/OpenAI`, `Data`, `EventSourcing`, etc.).
 
 Para una descripción detallada de la arquitectura, incluyendo flujos de datos y patrones de diseño aplicados, consulta el archivo [`ARCHITECTURE.md`](ARCHITECTURE.md) en este repositorio.
 
@@ -161,5 +161,3 @@ Para ejecutar esta aplicación localmente, necesitarás:
 ## 📄 Licencia
 
 Este proyecto está bajo la [Licencia MIT](https://opensource.org/licenses/MIT).
-
----

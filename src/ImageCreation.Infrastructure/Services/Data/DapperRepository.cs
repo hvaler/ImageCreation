@@ -11,7 +11,7 @@ using System.Data;
 using System.Threading.Tasks;
 using System;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.Data
 {
    public class DapperRepository : IDapperRepository
    {
@@ -47,11 +47,11 @@ namespace ImageCreation.Infrastructure.Services
 
          await db.ExecuteAsync(sql, new
          {
-            Id = record.Id,
+            record.Id,
             Description = record.Description.Value,
             Base64Data = record.Base64Data.Value,
             PlatformUsed = record.PlatformUsed.Value, // ¡NUEVO!
-            CreatedAt = record.CreatedAt
+            record.CreatedAt
          });
       }
 
@@ -95,11 +95,11 @@ namespace ImageCreation.Infrastructure.Services
 
          await db.ExecuteAsync(sql, new
          {
-            Id = record.Id,
+            record.Id,
             OriginalUrl = record.OriginalUrl.Value,
             ClassifiedImageBase64 = record.ClassifiedImageBase64.Value,
             ClassificationResult = record.ClassificationResult.Value,
-            ClassifiedAt = record.ClassifiedAt
+            record.ClassifiedAt
          });
       }
 

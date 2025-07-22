@@ -1,9 +1,11 @@
 using ImageCreation.Application.Interfaces;
 using ImageCreation.Infrastructure.Interfaces;
+
 using Microsoft.Extensions.Configuration;
+
 using StackExchange.Redis;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.Caching
 {
    public class RedisCacheService : ICacheService
    {

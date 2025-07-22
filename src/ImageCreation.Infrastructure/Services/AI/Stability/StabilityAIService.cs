@@ -10,7 +10,7 @@ using System.Net.Http.Headers; // Necesario para MediaTypeWithQualityHeaderValue
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.AI.Stability
 {
    public class StabilityAIService : IOpenAiService
    {

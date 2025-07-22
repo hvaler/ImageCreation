@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using OpenAI.Images;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.AI.OpenAI
 {
    public class PublicOpenAiService : IOpenAiService
    {

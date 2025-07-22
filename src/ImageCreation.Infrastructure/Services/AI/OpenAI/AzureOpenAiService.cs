@@ -4,15 +4,15 @@ using Azure.AI.OpenAI; // Para OpenAIClient, ImageClient, ImageGenerationOptions
 using ImageCreation.Application.Interfaces;
 using ImageCreation.Infrastructure.Interfaces;
 
-using Microsoft.Extensions.Configuration; 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using OpenAI.Images;
 
-using System; 
-using System.Threading.Tasks; 
+using System;
+using System.Threading.Tasks;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.AI.OpenAI
 {
    
    public class AzureOpenAiService : IOpenAiService 

@@ -1,12 +1,12 @@
 ﻿using ImageCreation.Application.Interfaces;
 
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Logging;
 
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.Utilities
 {
    public class UrlToBase64Converter : IUrlConverterService
    {

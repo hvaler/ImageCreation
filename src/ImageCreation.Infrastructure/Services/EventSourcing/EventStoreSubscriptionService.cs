@@ -9,9 +9,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Reflection;
-using Newtonsoft.Json; 
+using Newtonsoft.Json;
 
-namespace ImageCreation.Infrastructure.Services
+namespace ImageCreation.Infrastructure.Services.EventSourcing
 {
    public class EventStoreSubscriptionService : IHostedService
    {
