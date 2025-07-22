@@ -1,15 +1,15 @@
-
+// ImageCreation.Application.Commands/CreateImageCommand.cs
 namespace ImageCreation.Application.Commands
 {
    public class CreateImageCommand
    {
       public string Description { get; }
-      public string? Platform { get; }  // "Public" (default) or "Azure"
+      public string? PlatformRequested { get; }  // Renombrado a PlatformRequested
 
-      public CreateImageCommand(string description, string? platform = null)
+      public CreateImageCommand(string description, string? platformRequested = null) // Renombrado
       {
          Description = description;
-         Platform = platform;
+         PlatformRequested = platformRequested; // Renombrado
       }
    }
 }

@@ -1,14 +1,15 @@
+// ImageCreation.Infrastructure.Services/DapperRepository.cs
 using Dapper;
-using ImageCreation.Application.Interfaces; 
+using ImageCreation.Application.Interfaces;
 using ImageCreation.Domain.Entities;
 using ImageCreation.Domain.ValueObjects;
 
-using Microsoft.Data.SqlClient; 
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
 using System.Data;
 using System.Threading.Tasks;
-using System; 
+using System;
 
 namespace ImageCreation.Infrastructure.Services
 {
@@ -29,25 +30,27 @@ namespace ImageCreation.Infrastructure.Services
       public async Task InsertAsync(ImageRecord record)
       {
          using IDbConnection db = CreateConnection();
-     
+
          var sql = @"
                 MERGE INTO Images AS Target
-                USING (VALUES (@Id, @Description, @Base64Data, @CreatedAt)) AS Source (Id, Description, Base64Data, CreatedAt)
+                USING (VALUES (@Id, @Description, @Base64Data, @PlatformUsed, @CreatedAt)) AS Source (Id, Description, Base64Data, PlatformUsed, CreatedAt)
                 ON Target.Id = Source.Id
                 WHEN MATCHED THEN
                     UPDATE SET
                         Description = Source.Description,
                         Base64Data = Source.Base64Data,
+                        PlatformUsed = Source.PlatformUsed, -- ¡NUEVO!
                         CreatedAt = Source.CreatedAt
                 WHEN NOT MATCHED BY TARGET THEN
-                    INSERT (Id, Description, Base64Data, CreatedAt)
-                    VALUES (Source.Id, Source.Description, Source.Base64Data, Source.CreatedAt);";
+                    INSERT (Id, Description, Base64Data, PlatformUsed, CreatedAt) -- ¡NUEVO!
+                    VALUES (Source.Id, Source.Description, Source.Base64Data, Source.PlatformUsed, Source.CreatedAt);"; // ¡NUEVO!
 
          await db.ExecuteAsync(sql, new
          {
             Id = record.Id,
             Description = record.Description.Value,
             Base64Data = record.Base64Data.Value,
+            PlatformUsed = record.PlatformUsed.Value, // ¡NUEVO!
             CreatedAt = record.CreatedAt
          });
       }
@@ -55,18 +58,19 @@ namespace ImageCreation.Infrastructure.Services
       public async Task<ImageRecord?> GetByIdAsync(string id)
       {
          using IDbConnection db = CreateConnection();
-         var sql = "SELECT Id, Description, Base64Data, CreatedAt FROM Images WHERE Id = @Id";
-      
+         var sql = "SELECT Id, Description, Base64Data, PlatformUsed, CreatedAt FROM Images WHERE Id = @Id"; // ¡NUEVO!
+
          var resultDto = await db.QuerySingleOrDefaultAsync<ImageRecordDto>(sql, new { Id = id });
          if (resultDto == null)
          {
             return null;
          }
-     
+
          return new ImageRecord(
                          resultDto.Id,
                          new ImageDescription(resultDto.Description),
                          new Base64Data(resultDto.Base64Data),
+                         new Platform(resultDto.PlatformUsed), // ¡NUEVO!
                          resultDto.CreatedAt
                      );
       }
@@ -74,7 +78,7 @@ namespace ImageCreation.Infrastructure.Services
       public async Task InsertClassifiedImageAsync(ClassifiedImageRecord record)
       {
          using IDbConnection db = CreateConnection();
-    
+
          var sql = @"
                 MERGE INTO ClassifiedImages AS Target
                 USING (VALUES (@Id, @OriginalUrl, @ClassifiedImageBase64, @ClassificationResult, @ClassifiedAt)) AS Source (Id, OriginalUrl, ClassifiedImageBase64, ClassificationResult, ClassifiedAt)
@@ -116,7 +120,7 @@ namespace ImageCreation.Infrastructure.Services
             return null;
          }
 
-         
+
          return new ClassifiedImageRecord(
              resultDto.Id,
              new ImageUrl(resultDto.OriginalUrl),
@@ -130,17 +134,18 @@ namespace ImageCreation.Infrastructure.Services
       private class ImageRecordDto
       {
          public Guid Id { get; set; }
-         public string Description { get; set; } = string.Empty; 
-         public string Base64Data { get; set; } = string.Empty; 
+         public string Description { get; set; } = string.Empty;
+         public string Base64Data { get; set; } = string.Empty;
+         public string PlatformUsed { get; set; } = string.Empty; // ¡NUEVO!
          public DateTime CreatedAt { get; set; }
       }
 
       private class ClassifiedImageRecordDto
       {
          public Guid Id { get; set; }
-         public string OriginalUrl { get; set; } = string.Empty; 
-         public string ClassifiedImageBase64 { get; set; } = string.Empty; 
-         public string ClassificationResult { get; set; } = string.Empty; 
+         public string OriginalUrl { get; set; } = string.Empty;
+         public string ClassifiedImageBase64 { get; set; } = string.Empty;
+         public string ClassificationResult { get; set; } = string.Empty;
          public DateTime ClassifiedAt { get; set; }
       }
    }

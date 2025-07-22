@@ -1,32 +1,34 @@
-﻿using ImageCreation.Application.Interfaces; // Para IOpenAiService y IOpenAiServiceFactory
+﻿// ImageCreation.Infrastructure.Services/OpenAiServiceFactory.cs
+using ImageCreation.Application.Interfaces;
 
-using Microsoft.Extensions.Logging; // Para los loggers de los servicios
+using Microsoft.Extensions.DependencyInjection; // ¡NUEVO! Para IServiceProvider
+
+using System; // Para ArgumentNullException
 
 namespace ImageCreation.Infrastructure.Services
 {
    public class OpenAiServiceFactory : IOpenAiServiceFactory
    {
-      // Inyectamos las implementaciones concretas aquí.
-      // Podríamos inyectar IServiceProvider y resolverlas lazily,
-      // pero para dos servicios, inyectarlos directamente es más simple.
-      private readonly PublicOpenAiService _publicOpenAiService;
-      private readonly AzureOpenAiService _azureOpenAiService;
+      // Quitamos las inyecciones directas de los servicios específicos.
+      private readonly IServiceProvider _serviceProvider; // ¡CAMBIO CLAVE!
 
-      public OpenAiServiceFactory(
-          PublicOpenAiService publicOpenAiService,
-          AzureOpenAiService azureOpenAiService)
+      public OpenAiServiceFactory(IServiceProvider serviceProvider) // ¡CAMBIO CLAVE!
       {
-         _publicOpenAiService = publicOpenAiService;
-         _azureOpenAiService = azureOpenAiService;
+         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
       }
 
       public IOpenAiService GetService(string platform)
       {
+         // Resolvemos el servicio de forma perezosa, solo cuando se solicita.
          return platform.ToLowerInvariant() switch
          {
-            "azure" => _azureOpenAiService,
-            "public" => _publicOpenAiService, 
-            _ => _publicOpenAiService, // Fallback si la plataforma no es reconocida
+            "azure" => _serviceProvider.GetRequiredService<AzureOpenAiService>(),
+            "public" => _serviceProvider.GetRequiredService<PublicOpenAiService>(),
+            "stability" => _serviceProvider.GetRequiredService<StabilityAIService>(),
+            "google" => _serviceProvider.GetRequiredService<GoogleCloudAIService>(),
+            "huggingface" => _serviceProvider.GetRequiredService<HuggingFaceService>(),
+            "gemini" => _serviceProvider.GetRequiredService<GeminiProImageService>(),
+            _ => _serviceProvider.GetRequiredService<PublicOpenAiService>(), // Fallback si la plataforma no es reconocida
          };
       }
    }

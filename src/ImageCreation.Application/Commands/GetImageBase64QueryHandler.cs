@@ -1,11 +1,13 @@
-﻿using ImageCreation.Application.DTOs;
+﻿// ImageCreation.Application.Handlers/GetImageBase64QueryHandler.cs
+using ImageCreation.Application.DTOs;
 using ImageCreation.Application.Interfaces;
 using ImageCreation.Application.Queries;
 using ImageCreation.Domain.Entities;
+using ImageCreation.Domain.ValueObjects; // Necesario para Platform
 
 using Microsoft.Extensions.Logging;
 
-using System.Text.Json; 
+using System.Text.Json;
 
 namespace ImageCreation.Application.Handlers
 {
@@ -27,7 +29,6 @@ namespace ImageCreation.Application.Handlers
          string imageId = query.Id.ToString();
          _logger.LogInformation("Handling GetImageBase64Query for ID: {Id}", imageId);
 
-         // Intentar obtener el DTO completo de la caché primero
          string? imageDtoJsonFromCache = await _cacheService.GetAsync(imageId);
          ImageDto? imageDto = null;
 
@@ -43,7 +44,6 @@ namespace ImageCreation.Application.Handlers
             }
          }
 
-         // Si no está en caché o la deserialización falló, obtener de la base de datos
          if (imageDto == null)
          {
             ImageRecord? record = await _dapperRepository.GetByIdAsync(imageId);
@@ -58,10 +58,10 @@ namespace ImageCreation.Application.Handlers
                Id = record.Id,
                Description = record.Description.Value,
                Base64Data = record.Base64Data.Value,
+               PlatformUsed = record.PlatformUsed.Value, // ¡NUEVO!
                CreatedAt = record.CreatedAt
             };
 
-            // Opcional: Si se encontró en DB y no en caché, guardar el DTO completo en caché
             var imageDtoJsonToCache = JsonSerializer.Serialize(imageDto);
             await _cacheService.SetAsync(imageId, imageDtoJsonToCache);
             _logger.LogInformation("Image ID: {Id} retrieved from DB and full DTO saved to cache.", imageId);

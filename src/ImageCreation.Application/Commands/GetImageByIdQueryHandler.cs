@@ -1,11 +1,13 @@
-﻿using ImageCreation.Application.DTOs;
+﻿// ImageCreation.Application.Handlers/GetImageByIdQueryHandler.cs
+using ImageCreation.Application.DTOs;
 using ImageCreation.Application.Interfaces;
 using ImageCreation.Application.Queries;
 using ImageCreation.Domain.Entities;
+using ImageCreation.Domain.ValueObjects; // Necesario para Platform
 
 using Microsoft.Extensions.Logging;
 
-using System.Text.Json; 
+using System.Text.Json;
 
 namespace ImageCreation.Application.Handlers
 {
@@ -27,7 +29,6 @@ namespace ImageCreation.Application.Handlers
          string imageId = query.Id.ToString();
          _logger.LogInformation("Handling GetImageByIdQuery for ID: {Id}", imageId);
 
-         // 1. Intentar obtener el JSON completo del DTO de la caché (Redis)
          string? imageDtoJsonFromCache = await _cacheService.GetAsync(imageId);
 
          if (!string.IsNullOrEmpty(imageDtoJsonFromCache))
@@ -48,7 +49,6 @@ namespace ImageCreation.Application.Handlers
             }
          }
 
-         // 2. Si no está en caché (o el JSON en caché era inválido), obtener de la base de datos
          ImageRecord? record = await _dapperRepository.GetByIdAsync(imageId);
          if (record == null)
          {
@@ -56,16 +56,15 @@ namespace ImageCreation.Application.Handlers
             return null;
          }
 
-         // 3. Si se encuentra en la base de datos, construir ImageDto
          var imageDtoFromDb = new ImageDto
          {
             Id = record.Id,
             Description = record.Description.Value,
             Base64Data = record.Base64Data.Value,
+            PlatformUsed = record.PlatformUsed.Value, // ¡NUEVO!
             CreatedAt = record.CreatedAt
          };
 
-         // 4. Almacenarlo en caché como JSON para futuras solicitudes (OPCIONAL, si quieres que el Query Handler gestione la caché)
          var imageDtoJsonToCache = JsonSerializer.Serialize(imageDtoFromDb);
          await _cacheService.SetAsync(imageId, imageDtoJsonToCache);
          _logger.LogInformation("Image ID: {Id} retrieved from DB and saved to cache.", imageId);

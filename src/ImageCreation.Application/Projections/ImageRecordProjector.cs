@@ -1,4 +1,5 @@
-﻿using System;
+﻿// ImageCreation.Application.Projections/ImageRecordProjector.cs
+using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -39,11 +40,12 @@ namespace ImageCreation.Application.Projections
                 imageCreatedEvent.Id,
                 new ImageDescription(imageCreatedEvent.Description),
                 new Base64Data(imageCreatedEvent.Base64Data),
+                new Platform(imageCreatedEvent.PlatformUsed), // ¡NUEVO! Reconstruir el Value Object
                 imageCreatedEvent.Timestamp
             );
 
-            // Persistir en SQL (¡Aquí es donde necesitamos idempotencia!)
-            await _repository.InsertAsync(imageRecord); // O Update/Upsert si ya existe
+            // Persistir en SQL
+            await _repository.InsertAsync(imageRecord);
             _logger.LogInformation("ImageRecord guardado/actualizado en SQL con ID: {Id}", imageCreatedEvent.Id);
 
             // Crear DTO para caché
@@ -52,6 +54,7 @@ namespace ImageCreation.Application.Projections
                Id = imageRecord.Id,
                Description = imageRecord.Description.Value,
                Base64Data = imageRecord.Base64Data.Value,
+               PlatformUsed = imageRecord.PlatformUsed.Value, // ¡NUEVO!
                CreatedAt = imageRecord.CreatedAt
             };
 
@@ -64,7 +67,6 @@ namespace ImageCreation.Application.Projections
          {
             _logger.LogError(ex, "Error processing ImageCreatedEvent for ID: {Id}. Description: {Description}",
                 imageCreatedEvent.Id, imageCreatedEvent.Description);
-            // Aquí podrías implementar una lógica de reintento o enviar a una cola de errores (DLQ)
          }
       }
    }

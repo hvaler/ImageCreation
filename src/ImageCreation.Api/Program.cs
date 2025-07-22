@@ -19,6 +19,11 @@ var config = builder.Configuration;
 // Estas NO se inyectarán directamente en los Command Handlers, sino en la fábrica.
 builder.Services.AddTransient<PublicOpenAiService>();
 builder.Services.AddTransient<AzureOpenAiService>();
+builder.Services.AddTransient<StabilityAIService>();
+builder.Services.AddTransient<GoogleCloudAIService>();
+builder.Services.AddTransient<HuggingFaceService>();
+builder.Services.AddTransient<GeminiProImageService>();
+
 
 // Registra la fábrica de OpenAI.
 // La fábrica es la que se inyectará en CreateImageCommandHandler y decidirá qué servicio concreto usar.
